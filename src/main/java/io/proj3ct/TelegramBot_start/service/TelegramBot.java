@@ -23,8 +23,13 @@ if(update.hasMessage() && update.getMessage().hasText()){
     long chatId = update.getMessage().getChatId();
     switch (messageText){
         case "/start":
+if(update.getMessage().getChat().getFirstName()!= null) {
 
-                startCommandReceived(chatId,update.getMessage().getChat().getFirstName());
+
+    startCommandReceived(chatId, update.getMessage().getChat().getFirstName());
+}else {
+    startCommandReceived(chatId, "NoName");
+}
                          break;
         default: sendMessage(chatId,"Sorry, command was not recognized");
 
