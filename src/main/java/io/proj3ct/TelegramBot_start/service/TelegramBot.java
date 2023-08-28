@@ -12,6 +12,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 
 @Component
@@ -48,8 +49,31 @@ public class TelegramBot extends TelegramLongPollingBot {
                     AllUsers(chatId);
 
                 }
-                default -> sendMessage(chatId, "Sorry, command was not recognized");
+                default -> {
+                    UpdateRequtation(messageText, chatId);
+                    int point = _default(messageText, chatId);
+                    sendMessage(chatId, "Three won " + point + " points");
+                    if (point > 90) {
+                        sendMessage(chatId, "You are lucky");
+                    }
+                }
             }
+        }
+
+    }
+
+    private void UpdateRequtation(String messageText, long chatId) {
+        int min = messageText.indexOf("-");
+        int plas = messageText.indexOf("+");
+        if (plas >= 0 || min >= 0) {
+            User myUser = new User();
+            myUser = userRepository.findById(chatId).get();
+            if (plas >= 0) {
+                myUser.setRequtation(myUser.getRequtation() + 1);
+            } else {
+                myUser.setRequtation(myUser.getRequtation() - 1);
+            }
+            userRepository.save(myUser);
         }
 
     }
@@ -69,6 +93,37 @@ public class TelegramBot extends TelegramLongPollingBot {
         sendMessage(chatId, userList.toString());
     }
 
+    private int _default(String messageText, long chatId) {
+        messageText = " " + messageText;
+        User myUser = new User();
+        myUser = userRepository.findById(chatId).get();
+
+        int index = messageText.indexOf("cat");
+        int n = 50;
+        if (index != -1) {
+            System.out.println(index);
+            int x = ThreadLocalRandom.current().nextInt(0, 3);
+            switch (x) {
+                case 1 -> {
+                    n = n + 10;
+                    break;
+                }
+                case 2 -> {
+                    n = n + 20;
+                    break;
+                }
+                default -> {
+
+                }
+            }
+
+        }
+        int point = ThreadLocalRandom.current().nextInt(n, 101);
+        myUser.setScore(myUser.getScore() + point);
+        userRepository.save(myUser);
+        return point;
+    }
+
     private void registerUser(Message message) {
         if (userRepository.findById(message.getChatId()).isEmpty()) {
             var chatId = message.getChatId();
@@ -78,6 +133,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             user.setUserName(chat.getUserName());
             user.setFirstName(chat.getFirstName());
             user.setLastName(chat.getLastName());
+
             userRepository.save(user);
         }
     }
