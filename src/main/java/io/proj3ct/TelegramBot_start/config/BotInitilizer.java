@@ -1,7 +1,7 @@
 package io.proj3ct.TelegramBot_start.config;
 
 import io.proj3ct.TelegramBot_start.service.TelegramBot;
-import org.springframework.beans.factory.annotation.Autowired;
+
 
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
@@ -12,8 +12,13 @@ import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 
 @Component
 public class BotInitilizer {
-    @Autowired
+
+    final
     TelegramBot bot;
+
+    public BotInitilizer(TelegramBot bot) {
+        this.bot = bot;
+    }
 
     @EventListener({ContextRefreshedEvent.class})
     public void init() throws TelegramApiException {
