@@ -7,12 +7,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.api.methods.groupadministration.SetChatPhoto;
+import org.telegram.telegrambots.meta.api.methods.send.SendContact;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
+import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.apache.commons.lang3.StringUtils;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.net.URL;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -37,13 +42,14 @@ public class TelegramBot extends TelegramLongPollingBot {
     public void onUpdateReceived(Update update) {
         if (update.hasMessage() && update.getMessage().hasText()) {
             String messageText = update.getMessage().getText();
+            org.telegram.telegrambots.meta.api.objects.User form = update.getMessage().getFrom();
             long chatId = update.getMessage().getChatId();
             switch (messageText) {
                 case "/start" -> {
                     if (update.getMessage().getChat().getFirstName() != null) {
 
                         registerUser(update.getMessage());
-                        startCommandReceived(chatId, update.getMessage().getChat().getFirstName());
+                        startCommandReceived(chatId, form.getFirstName());
                     } else {
                         startCommandReceived(chatId, "NoName");
                     }
@@ -56,7 +62,8 @@ public class TelegramBot extends TelegramLongPollingBot {
                 default -> {
                     UpdateReputation(messageText, chatId);
                     int point = AddPoint(messageText, chatId);
-                    sendMessage(chatId, "Three won " + point + " points");
+                  sendPhoto(chatId);
+                    sendMessage(chatId, "The won " + point + " points");
                     if (point > 90) {
                         sendMessage(chatId, "You are lucky");
                     }
@@ -65,7 +72,17 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
 
     }
+    private void sendPhoto(long chatId) {
+        SendPhoto sendPhoto = new SendPhoto();
+        sendPhoto.setChatId(chatId);
+        sendPhoto.setPhoto(new InputFile("https://www.google.com/imgres?imgurl=https%3A%2F%2Fimages.unian.net%2Fphotos%2F2022_03%2Fthumb_files%2F1000_545_1648468790-5163.jpeg%3F1&tbnid=At7DmqGjmAv57M&vet=12ahUKEwiPmPqjw4GBAxXNAhAIHZgTAqoQMygDegQIARBb..i&imgrefurl=https%3A%2F%2Fwww.unian.ua%2Fecology%2Fznamenitiy-kit-stepan-z-za-kordonu-dopomagaye-tvarinam-v-ukrajini-11762992.html&docid=FdTQ7YbCJ8NlOM&w=1000&h=545&q=%D0%BA%D1%96%D1%82&ved=2ahUKEwiPmPqjw4GBAxXNAhAIHZgTAqoQMygDegQIARBb")); // Шлях до вашого зображення
 
+        try {
+            execute(sendPhoto);
+        } catch (TelegramApiException e) {
+            log.error("Failed to Message the bot");
+        }
+    }
     private void UpdateReputation(String messageText, long chatId) {
         int min = messageText.indexOf("-");
         int plus = messageText.indexOf("+");
