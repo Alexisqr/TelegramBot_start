@@ -1,14 +1,14 @@
 package io.proj3ct.TelegramBot_start.service;
 
+import io.proj3ct.TelegramBot_start.DTO.CatDTO;
 import io.proj3ct.TelegramBot_start.config.BotConfig;
 import io.proj3ct.TelegramBot_start.entity.User;
 import io.proj3ct.TelegramBot_start.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-
+import org.springframework.web.client.RestTemplate;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
-import org.telegram.telegrambots.meta.api.methods.groupadministration.SetChatPhoto;
-import org.telegram.telegrambots.meta.api.methods.send.SendContact;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
@@ -17,11 +17,9 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.apache.commons.lang3.StringUtils;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import java.net.URL;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
-
-import static org.sqlite.util.StringUtils.*;
 
 @Slf4j
 @Component
@@ -60,9 +58,9 @@ public class TelegramBot extends TelegramLongPollingBot {
 
                 }
                 default -> {
-                    UpdateReputation(messageText, chatId);
-                    int point = AddPoint(messageText, chatId);
-                  sendPhoto(chatId);
+                    UpdateReputation(messageText, form.getId());
+                    int point = AddPoint(messageText, form.getId());
+                    sendPhoto(chatId);
                     sendMessage(chatId, "The won " + point + " points");
                     if (point > 90) {
                         sendMessage(chatId, "You are lucky");
@@ -72,10 +70,20 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
 
     }
+
     private void sendPhoto(long chatId) {
+        RestTemplate restTemplate = new RestTemplate();
+
+        String resourceUrl
+                = "https://api.thecatapi.com/v1/images/search";
+       var response
+                = restTemplate.getForEntity(resourceUrl, CatDTO[].class);
+
+        var productsUrls = Arrays.stream(response.getBody()).map(CatDTO::getUrl).toArray(String[]::new);;
+
         SendPhoto sendPhoto = new SendPhoto();
         sendPhoto.setChatId(chatId);
-        sendPhoto.setPhoto(new InputFile("https://www.google.com/imgres?imgurl=https%3A%2F%2Fimages.unian.net%2Fphotos%2F2022_03%2Fthumb_files%2F1000_545_1648468790-5163.jpeg%3F1&tbnid=At7DmqGjmAv57M&vet=12ahUKEwiPmPqjw4GBAxXNAhAIHZgTAqoQMygDegQIARBb..i&imgrefurl=https%3A%2F%2Fwww.unian.ua%2Fecology%2Fznamenitiy-kit-stepan-z-za-kordonu-dopomagaye-tvarinam-v-ukrajini-11762992.html&docid=FdTQ7YbCJ8NlOM&w=1000&h=545&q=%D0%BA%D1%96%D1%82&ved=2ahUKEwiPmPqjw4GBAxXNAhAIHZgTAqoQMygDegQIARBb")); // Шлях до вашого зображення
+        sendPhoto.setPhoto(new InputFile(productsUrls[0]));
 
         try {
             execute(sendPhoto);
@@ -83,12 +91,12 @@ public class TelegramBot extends TelegramLongPollingBot {
             log.error("Failed to Message the bot");
         }
     }
+
     private void UpdateReputation(String messageText, long chatId) {
         int min = messageText.indexOf("-");
         int plus = messageText.indexOf("+");
         if (plus >= 0 || min >= 0) {
-            User myUser = new User();
-            myUser = userRepository.findById(chatId).orElse(new User());
+            User myUser = userRepository.findById(chatId).orElse(new User());
             if (plus >= 0) {
                 myUser.setReputation(myUser.getReputation() + 1);
             } else {
@@ -116,13 +124,11 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private int AddPoint(String messageText, long chatId) {
         messageText = " " + messageText;
-        User myUser = new User();
-        myUser = userRepository.findById(chatId).orElse(new User());
-
-        var index = StringUtils.contains(messageText,"cat");
+        User myUser = userRepository.findById(chatId).orElse(new User());
+        var index = StringUtils.contains(messageText, "cat");
         int n = 50;
         if (index) {
-            log.info("Cat index is: " +index);
+            log.info("Cat index is: " + index);
             int x = ThreadLocalRandom.current().nextInt(0, 3);
             switch (x) {
                 case 1 -> {
@@ -150,7 +156,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             var chatId = message.getChatId();
             var chat = message.getChat();
             User user = new User();
-            user.setId(chatId);
+            user.setId(chat.getId());
             user.setUserName(chat.getUserName());
             user.setFirstName(chat.getFirstName());
             user.setLastName(chat.getLastName());
@@ -174,9 +180,6 @@ public class TelegramBot extends TelegramLongPollingBot {
             log.error("Failed to Message the bot");
         }
     }
-
-
-
     @Override
     public String getBotUsername() {
 
