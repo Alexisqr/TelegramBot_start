@@ -12,15 +12,10 @@ import lombok.Data;
 public class User {
     @Id
     private Long id;
-
-    @Column(name = "user_name")
     private String userName;
-    @Column(name = "first_name")
     private String firstName;
-    @Column(name = "last_name")
     private String lastName;
-    @Column(name = "is_bot")
     private Boolean isBot = false;
     private Integer score = 0;
-    private Integer requtation = 0;
+    private Integer reputation = 0;
 }

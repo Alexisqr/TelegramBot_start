@@ -3,18 +3,22 @@ package io.proj3ct.TelegramBot_start.service;
 import io.proj3ct.TelegramBot_start.config.BotConfig;
 import io.proj3ct.TelegramBot_start.entity.User;
 import io.proj3ct.TelegramBot_start.repository.UserRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
-
+import org.apache.commons.lang3.StringUtils;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
+import static org.sqlite.util.StringUtils.*;
 
+@Slf4j
 @Component
 public class TelegramBot extends TelegramLongPollingBot {
 
@@ -50,8 +54,8 @@ public class TelegramBot extends TelegramLongPollingBot {
 
                 }
                 default -> {
-                    UpdateRequtation(messageText, chatId);
-                    int point = _default(messageText, chatId);
+                    UpdateReputation(messageText, chatId);
+                    int point = AddPoint(messageText, chatId);
                     sendMessage(chatId, "Three won " + point + " points");
                     if (point > 90) {
                         sendMessage(chatId, "You are lucky");
@@ -62,16 +66,16 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     }
 
-    private void UpdateRequtation(String messageText, long chatId) {
+    private void UpdateReputation(String messageText, long chatId) {
         int min = messageText.indexOf("-");
-        int plas = messageText.indexOf("+");
-        if (plas >= 0 || min >= 0) {
+        int plus = messageText.indexOf("+");
+        if (plus >= 0 || min >= 0) {
             User myUser = new User();
-            myUser = userRepository.findById(chatId).get();
-            if (plas >= 0) {
-                myUser.setRequtation(myUser.getRequtation() + 1);
+            myUser = userRepository.findById(chatId).orElse(new User());
+            if (plus >= 0) {
+                myUser.setReputation(myUser.getReputation() + 1);
             } else {
-                myUser.setRequtation(myUser.getRequtation() - 1);
+                myUser.setReputation(myUser.getReputation() - 1);
             }
             userRepository.save(myUser);
         }
@@ -93,15 +97,15 @@ public class TelegramBot extends TelegramLongPollingBot {
         sendMessage(chatId, userList.toString());
     }
 
-    private int _default(String messageText, long chatId) {
+    private int AddPoint(String messageText, long chatId) {
         messageText = " " + messageText;
         User myUser = new User();
-        myUser = userRepository.findById(chatId).get();
+        myUser = userRepository.findById(chatId).orElse(new User());
 
-        int index = messageText.indexOf("cat");
+        var index = StringUtils.contains(messageText,"cat");
         int n = 50;
-        if (index != -1) {
-            System.out.println(index);
+        if (index) {
+            log.info("Cat index is: " +index);
             int x = ThreadLocalRandom.current().nextInt(0, 3);
             switch (x) {
                 case 1 -> {
@@ -150,15 +154,11 @@ public class TelegramBot extends TelegramLongPollingBot {
         try {
             execute(message);
         } catch (TelegramApiException e) {
-
+            log.error("Failed to Message the bot");
         }
     }
 
-    @Override
-    public String getBotToken() {
 
-        return config.getToken();
-    }
 
     @Override
     public String getBotUsername() {
